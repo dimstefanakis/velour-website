@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Playfair_Display, DM_Sans } from "next/font/google"
 import { Suspense } from "react"
+import { Toaster } from "sonner"
 import "./globals.css"
 
 const playfair = Playfair_Display({
@@ -33,6 +34,17 @@ export default function RootLayout({
       <body className={`font-sans ${playfair.variable} ${dmSans.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
           {children}
+          <Toaster 
+            position="bottom-center" 
+            toastOptions={{
+              className: 'font-sans',
+              style: {
+                background: 'var(--card)',
+                color: 'var(--card-foreground)',
+                border: '1px solid var(--border)',
+              },
+            }}
+          />
           {/*<Analytics />*/}
         </Suspense>
       </body>

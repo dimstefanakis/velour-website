@@ -1,8 +1,43 @@
+'use client'
+
+import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { toast } from 'sonner'
+import { addToWaitlist } from '@/app/actions/waitlist'
 
 export default function HomePage() {
+  const [email, setEmail] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const result = await addToWaitlist({ email })
+
+      if (result.success) {
+        toast.success("Welcome to the waitlist! We'll notify you when we launch.")
+        setEmail('')
+      } else {
+        toast.error(result.error || 'Something went wrong. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      toast.error('An unexpected error occurred. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -15,16 +50,24 @@ export default function HomePage() {
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty">
             Bite-sized romance stories you can listen to anywhere, anytime.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <Input
               type="email"
               placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
+              required
               className="flex-1 bg-background border-accent focus:ring-accent h-14 text-lg p-5 md:px-6"
             />
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 h-14 text-lg font-medium">
-              Join the Waitlist
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 h-14 text-lg font-medium disabled:opacity-50"
+            >
+              {isSubmitting ? 'Joining...' : 'Join the Waitlist'}
             </Button>
-          </div>
+          </form>
         </div>
       </section>
 
@@ -107,16 +150,24 @@ export default function HomePage() {
           <h2 className="font-playfair text-3xl md:text-4xl font-bold text-primary mb-8 text-balance">
             Be the first to know when the story begins.
           </h2>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-4">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-4">
             <Input
               type="email"
               placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
+              required
               className="flex-1 bg-background border-accent focus:ring-accent h-14 text-lg px-5 md:px-6"
             />
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 h-14 text-lg font-medium">
-              Join the Waitlist
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 h-14 text-lg font-medium disabled:opacity-50"
+            >
+              {isSubmitting ? 'Joining...' : 'Join the Waitlist'}
             </Button>
-          </div>
+          </form>
           <p className="text-sm text-muted-foreground italic">No spam. Just stories.</p>
         </div>
       </section>
