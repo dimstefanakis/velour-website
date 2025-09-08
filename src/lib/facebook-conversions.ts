@@ -12,7 +12,7 @@ interface FacebookEventData {
     clientIpAddress?: string
     clientUserAgent?: string
   }
-  customData?: Record<string, any>
+  customData?: Record<string, string | number | boolean>
   actionSource: 'website'
   sourceUrl?: string
 }
@@ -51,7 +51,13 @@ export async function sendFacebookEvent(
     }
 
     // Hash email if provided
-    const userData: any = {
+    interface UserData {
+      client_ip_address?: string
+      client_user_agent?: string
+      em?: string
+    }
+    
+    const userData: UserData = {
       client_ip_address: eventData.userData.clientIpAddress,
       client_user_agent: eventData.userData.clientUserAgent,
     }
@@ -60,7 +66,17 @@ export async function sendFacebookEvent(
       userData.em = hashEmail(eventData.userData.email)
     }
 
-    const eventPayload: any = {
+    interface EventPayload {
+      event_name: string
+      event_time: number
+      event_id: string
+      action_source: string
+      user_data: UserData
+      event_source_url?: string
+      custom_data?: Record<string, string | number | boolean>
+    }
+
+    const eventPayload: EventPayload = {
       event_name: eventData.eventName,
       event_time: eventData.eventTime,
       event_id: eventData.eventId,
@@ -78,14 +94,19 @@ export async function sendFacebookEvent(
       eventPayload.custom_data = eventData.customData
     }
 
-    const payload = {
+    interface PayloadData {
+      data: EventPayload[]
+      test_event_code?: string
+    }
+
+    const payload: PayloadData = {
       data: [eventPayload],
     }
 
     // Add test event code if in development
     const testEventCode = process.env.FACEBOOK_TEST_EVENT_CODE
     if (testEventCode) {
-      (payload as any).test_event_code = testEventCode
+      payload.test_event_code = testEventCode
     }
 
     const url = `${FACEBOOK_GRAPH_URL}/${FACEBOOK_API_VERSION}/${pixelId}/events?access_token=${accessToken}`
