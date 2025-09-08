@@ -38,8 +38,8 @@ export default function HomePage() {
         toast.success("Welcome to the waitlist! We'll notify you when we launch.")
         
         // Track Meta Pixel Lead event with same event ID for deduplication
-        if (typeof window !== 'undefined' && (window as any).fbq) {
-          (window as any).fbq('track', 'Lead', {
+        if (typeof window !== 'undefined' && window.fbq) {
+          window.fbq('track', 'Lead', {
             content_name: 'Email Waitlist',
             email: email,
           }, {
