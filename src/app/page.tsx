@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from 'sonner'
 import { addToWaitlist } from '@/app/actions/waitlist'
+import { generateEventId } from '@/lib/facebook-conversions'
 
 export default function HomePage() {
   const [email, setEmail] = useState('')
@@ -22,11 +23,30 @@ export default function HomePage() {
     }
 
     setIsSubmitting(true)
+    
+    // Generate event ID for deduplication
+    const eventId = generateEventId()
+    
     try {
-      const result = await addToWaitlist({ email })
+      const result = await addToWaitlist({ 
+        email,
+        eventId,
+        sourceUrl: typeof window !== 'undefined' ? window.location.href : undefined
+      })
 
       if (result.success) {
         toast.success("Welcome to the waitlist! We'll notify you when we launch.")
+        
+        // Track Meta Pixel Lead event with same event ID for deduplication
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+          (window as any).fbq('track', 'Lead', {
+            content_name: 'Email Waitlist',
+            email: email,
+          }, {
+            eventID: eventId
+          })
+        }
+        
         setEmail('')
       } else {
         toast.error(result.error || 'Something went wrong. Please try again.')
