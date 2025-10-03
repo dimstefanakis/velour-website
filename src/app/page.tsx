@@ -24,13 +24,15 @@ export default function HomePage() {
 
     setIsSubmitting(true)
     
-    // Generate event ID for deduplication
-    const eventId = generateEventId()
+    // Generate event IDs for server/browser deduplication
+    const leadEventId = generateEventId()
+    const completeRegistrationEventId = generateEventId()
     
     try {
       const result = await addToWaitlist({ 
         email,
-        eventId,
+        eventId: leadEventId,
+        completeRegistrationEventId,
         sourceUrl: typeof window !== 'undefined' ? window.location.href : undefined
       })
 
@@ -43,7 +45,14 @@ export default function HomePage() {
             content_name: 'Email Waitlist',
             email: email,
           }, {
-            eventID: eventId
+            eventID: leadEventId
+          })
+
+          window.fbq('track', 'CompleteRegistration', {
+            content_name: 'Email Waitlist Completed',
+            email: email,
+          }, {
+            eventID: completeRegistrationEventId
           })
         }
         

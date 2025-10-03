@@ -175,6 +175,35 @@ export async function sendLeadEvent(
 }
 
 /**
+ * Send CompleteRegistration event to Facebook Conversions API
+ */
+export async function sendCompleteRegistrationEvent(
+  email: string,
+  eventId: string,
+  ipAddress?: string,
+  userAgent?: string,
+  sourceUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  return sendFacebookEvent({
+    eventName: 'CompleteRegistration',
+    eventTime: Math.floor(Date.now() / 1000),
+    eventId,
+    actionSource: 'website',
+    sourceUrl,
+    userData: {
+      email,
+      clientIpAddress: ipAddress,
+      clientUserAgent: userAgent,
+    },
+    customData: {
+      content_name: 'Email Waitlist Completed',
+      currency: 'USD',
+      value: 0.0,
+    },
+  })
+}
+
+/**
  * Send PageView event to Facebook Conversions API
  */
 export async function sendPageViewEvent(

@@ -1,7 +1,7 @@
 'use server'
 
 import Airtable from 'airtable'
-import { sendLeadEvent } from '@/lib/facebook-conversions'
+import { sendLeadEvent, sendCompleteRegistrationEvent } from '@/lib/facebook-conversions'
 import { headers } from 'next/headers'
 
 // Initialize Airtable
@@ -12,6 +12,7 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
 interface WaitlistData {
   email: string
   eventId?: string
+  completeRegistrationEventId?: string
   sourceUrl?: string
 }
 
@@ -39,14 +40,36 @@ export async function addToWaitlist(data: WaitlistData) {
     ])
 
     // Send event to Facebook Conversions API
+    const eventPromises: Promise<{ success: boolean; error?: string }>[] = []
+
     if (data.eventId) {
-      await sendLeadEvent(
-        data.email,
-        data.eventId,
-        ipAddress,
-        userAgent,
-        data.sourceUrl
+      eventPromises.push(
+        sendLeadEvent(
+          data.email,
+          data.eventId,
+          ipAddress,
+          userAgent,
+          data.sourceUrl
+        )
       )
+    }
+
+    const completeEventId = data.completeRegistrationEventId ?? data.eventId
+
+    if (completeEventId) {
+      eventPromises.push(
+        sendCompleteRegistrationEvent(
+          data.email,
+          completeEventId,
+          ipAddress,
+          userAgent,
+          data.sourceUrl
+        )
+      )
+    }
+
+    if (eventPromises.length > 0) {
+      await Promise.all(eventPromises)
     }
 
     return { success: true, id: record[0].id }
