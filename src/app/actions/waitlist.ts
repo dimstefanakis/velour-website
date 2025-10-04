@@ -1,7 +1,7 @@
 'use server'
 
 import Airtable from 'airtable'
-import { sendLeadEvent, sendCompleteRegistrationEvent } from '@/lib/facebook-conversions'
+import { sendLeadEvent, sendCompleteRegistrationEvent, generateEventId } from '@/lib/facebook-conversions'
 import { headers } from 'next/headers'
 
 // Initialize Airtable
@@ -16,7 +16,17 @@ interface WaitlistData {
   sourceUrl?: string
 }
 
-export async function addToWaitlist(data: WaitlistData) {
+interface WaitlistResponse {
+  success: boolean
+  id?: string
+  eventIds?: {
+    lead: string
+    completeRegistration: string
+  }
+  error?: string
+}
+
+export async function addToWaitlist(data: WaitlistData): Promise<WaitlistResponse> {
   try {
     // Get request headers for user info
     const headersList = await headers()
@@ -24,11 +34,22 @@ export async function addToWaitlist(data: WaitlistData) {
     const forwardedFor = headersList.get('x-forwarded-for')
     const realIp = headersList.get('x-real-ip')
     const ipAddress = forwardedFor?.split(',')[0] || realIp || undefined
-    
+
+    const leadEventId = data.eventId ?? generateEventId()
+    const completeRegistrationEventId =
+      data.completeRegistrationEventId ?? generateEventId()
+
     // Testing mode - skip actual Airtable call
     if (process.env.TESTING === 'true') {
       console.log('Testing mode - Waitlist data:', data)
-      return { success: true, id: 'test-id' }
+      return {
+        success: true,
+        id: 'test-id',
+        eventIds: {
+          lead: leadEventId,
+          completeRegistration: completeRegistrationEventId,
+        },
+      }
     }
 
     const record = await base('Waitlist').create([
@@ -40,39 +61,33 @@ export async function addToWaitlist(data: WaitlistData) {
     ])
 
     // Send event to Facebook Conversions API
-    const eventPromises: Promise<{ success: boolean; error?: string }>[] = []
+    const eventPromises: Promise<{ success: boolean; error?: string }>[] = [
+      sendLeadEvent(
+        data.email,
+        leadEventId,
+        ipAddress,
+        userAgent,
+        data.sourceUrl
+      ),
+      sendCompleteRegistrationEvent(
+        data.email,
+        completeRegistrationEventId,
+        ipAddress,
+        userAgent,
+        data.sourceUrl
+      ),
+    ]
 
-    if (data.eventId) {
-      eventPromises.push(
-        sendLeadEvent(
-          data.email,
-          data.eventId,
-          ipAddress,
-          userAgent,
-          data.sourceUrl
-        )
-      )
+    await Promise.allSettled(eventPromises)
+
+    return {
+      success: true,
+      id: record[0].id,
+      eventIds: {
+        lead: leadEventId,
+        completeRegistration: completeRegistrationEventId,
+      },
     }
-
-    const completeEventId = data.completeRegistrationEventId ?? data.eventId
-
-    if (completeEventId) {
-      eventPromises.push(
-        sendCompleteRegistrationEvent(
-          data.email,
-          completeEventId,
-          ipAddress,
-          userAgent,
-          data.sourceUrl
-        )
-      )
-    }
-
-    if (eventPromises.length > 0) {
-      await Promise.all(eventPromises)
-    }
-
-    return { success: true, id: record[0].id }
   } catch (error) {
     console.error('Error creating Airtable record:', error)
     return { success: false, error: 'Failed to add to waitlist' }

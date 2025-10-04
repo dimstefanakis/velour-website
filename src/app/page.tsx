@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from 'sonner'
 import { addToWaitlist } from '@/app/actions/waitlist'
-import { generateEventId } from '@/lib/facebook-conversions'
 
 export default function HomePage() {
   const [email, setEmail] = useState('')
@@ -24,15 +23,9 @@ export default function HomePage() {
 
     setIsSubmitting(true)
     
-    // Generate event IDs for server/browser deduplication
-    const leadEventId = generateEventId()
-    const completeRegistrationEventId = generateEventId()
-    
     try {
       const result = await addToWaitlist({ 
         email,
-        eventId: leadEventId,
-        completeRegistrationEventId,
         sourceUrl: typeof window !== 'undefined' ? window.location.href : undefined
       })
 
@@ -41,19 +34,48 @@ export default function HomePage() {
         
         // Track Meta Pixel Lead event with same event ID for deduplication
         if (typeof window !== 'undefined' && window.fbq) {
-          window.fbq('track', 'Lead', {
-            content_name: 'Email Waitlist',
-            email: email,
-          }, {
-            eventID: leadEventId
-          })
+          const leadEventId = result.eventIds?.lead
+          const completeRegistrationEventId =
+            result.eventIds?.completeRegistration
 
-          window.fbq('track', 'CompleteRegistration', {
-            content_name: 'Email Waitlist Completed',
-            email: email,
-          }, {
-            eventID: completeRegistrationEventId
-          })
+          const leadOptions = leadEventId ? { eventID: leadEventId } : undefined
+          const completeRegistrationOptions = completeRegistrationEventId
+            ? { eventID: completeRegistrationEventId }
+            : undefined
+
+          if (leadOptions) {
+            window.fbq(
+              'track',
+              'Lead',
+              {
+                content_name: 'Email Waitlist',
+                email: email,
+              },
+              leadOptions
+            )
+          } else {
+            window.fbq('track', 'Lead', {
+              content_name: 'Email Waitlist',
+              email: email,
+            })
+          }
+
+          if (completeRegistrationOptions) {
+            window.fbq(
+              'track',
+              'CompleteRegistration',
+              {
+                content_name: 'Email Waitlist Completed',
+                email: email,
+              },
+              completeRegistrationOptions
+            )
+          } else {
+            window.fbq('track', 'CompleteRegistration', {
+              content_name: 'Email Waitlist Completed',
+              email: email,
+            })
+          }
         }
         
         setEmail('')
