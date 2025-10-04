@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Playfair_Display, DM_Sans } from "next/font/google"
+import { Analytics } from '@vercel/analytics/next';
 import { Suspense } from "react"
 import { Toaster } from "sonner"
 import Script from "next/script"
@@ -73,7 +74,7 @@ export default function RootLayout({
               },
             }}
           />
-          {/*<Analytics />*/}
+          <Analytics />
         </Suspense>
       </body>
     </html>
