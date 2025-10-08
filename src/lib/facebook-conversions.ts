@@ -11,6 +11,9 @@ interface FacebookEventData {
     email?: string
     clientIpAddress?: string
     clientUserAgent?: string
+    fbc?: string
+    fbp?: string
+    externalId?: string
   }
   customData?: Record<string, string | number | boolean>
   actionSource: 'website'
@@ -55,8 +58,11 @@ export async function sendFacebookEvent(
       client_ip_address?: string
       client_user_agent?: string
       em?: string
+      fbc?: string
+      fbp?: string
+      external_id?: string
     }
-    
+
     const userData: UserData = {
       client_ip_address: eventData.userData.clientIpAddress,
       client_user_agent: eventData.userData.clientUserAgent,
@@ -64,6 +70,18 @@ export async function sendFacebookEvent(
 
     if (eventData.userData.email) {
       userData.em = hashEmail(eventData.userData.email)
+    }
+
+    if (eventData.userData.fbc) {
+      userData.fbc = eventData.userData.fbc
+    }
+
+    if (eventData.userData.fbp) {
+      userData.fbp = eventData.userData.fbp
+    }
+
+    if (eventData.userData.externalId) {
+      userData.external_id = hashEmail(eventData.userData.externalId)
     }
 
     interface EventPayload {
@@ -153,7 +171,10 @@ export async function sendLeadEvent(
   eventId: string,
   ipAddress?: string,
   userAgent?: string,
-  sourceUrl?: string
+  sourceUrl?: string,
+  fbp?: string,
+  fbc?: string,
+  externalId?: string
 ): Promise<{ success: boolean; error?: string }> {
   return sendFacebookEvent({
     eventName: 'Lead',
@@ -165,6 +186,9 @@ export async function sendLeadEvent(
       email,
       clientIpAddress: ipAddress,
       clientUserAgent: userAgent,
+      fbp,
+      fbc,
+      externalId,
     },
     customData: {
       content_name: 'Email Waitlist',
@@ -182,7 +206,10 @@ export async function sendCompleteRegistrationEvent(
   eventId: string,
   ipAddress?: string,
   userAgent?: string,
-  sourceUrl?: string
+  sourceUrl?: string,
+  fbp?: string,
+  fbc?: string,
+  externalId?: string
 ): Promise<{ success: boolean; error?: string }> {
   return sendFacebookEvent({
     eventName: 'CompleteRegistration',
@@ -194,6 +221,9 @@ export async function sendCompleteRegistrationEvent(
       email,
       clientIpAddress: ipAddress,
       clientUserAgent: userAgent,
+      fbp,
+      fbc,
+      externalId,
     },
     customData: {
       content_name: 'Email Waitlist Completed',

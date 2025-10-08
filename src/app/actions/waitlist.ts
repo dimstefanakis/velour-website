@@ -14,6 +14,9 @@ interface WaitlistData {
   eventId?: string
   completeRegistrationEventId?: string
   sourceUrl?: string
+  fbp?: string
+  fbc?: string
+  externalId?: string
 }
 
 interface WaitlistResponse {
@@ -67,14 +70,20 @@ export async function addToWaitlist(data: WaitlistData): Promise<WaitlistRespons
         leadEventId,
         ipAddress,
         userAgent,
-        data.sourceUrl
+        data.sourceUrl,
+        data.fbp,
+        data.fbc,
+        data.externalId
       ),
       sendCompleteRegistrationEvent(
         data.email,
         completeRegistrationEventId,
         ipAddress,
         userAgent,
-        data.sourceUrl
+        data.sourceUrl,
+        data.fbp,
+        data.fbc,
+        data.externalId
       ),
     ]
 

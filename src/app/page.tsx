@@ -11,6 +11,15 @@ export default function HomePage() {
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const getCookieValue = (cookieName: string) => {
+    if (typeof document === 'undefined') return undefined
+    const cookies = document.cookie.split('; ')
+    const cookie = cookies.find((row) => row.startsWith(`${cookieName}=`))
+    return cookie
+      ? decodeURIComponent(cookie.substring(cookie.indexOf('=') + 1))
+      : undefined
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -24,9 +33,15 @@ export default function HomePage() {
     setIsSubmitting(true)
     
     try {
+      const fbp = getCookieValue('_fbp')
+      const fbc = getCookieValue('_fbc')
+
       const result = await addToWaitlist({ 
         email,
-        sourceUrl: typeof window !== 'undefined' ? window.location.href : undefined
+        sourceUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+        fbp,
+        fbc,
+        externalId: email,
       })
 
       if (result.success) {
